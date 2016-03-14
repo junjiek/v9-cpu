@@ -138,6 +138,16 @@ alltraps()
 setup_user_paging()
 {
   //YOUR CODE: lec7-spoc challenge-part2
+  int i;
+
+  int* pg_usr = pg_tbl[15] + 1024;
+
+  pg_dir[((uint)USRSTART >> 22)] = (int)(pg_usr) | PTE_P | PTE_W | PTE_U;
+
+  // Set up page table entry.
+  for (i = 0; i < 1024; i++) {
+    pg_usr[i] = (i << 12) | PTE_P | PTE_W | PTE_U;
+  }
 }
   
 setup_kernel_paging()
@@ -161,15 +171,13 @@ setup_kernel_paging()
   for (i = 0; i < 16; ++i) {
     pg_dir[i + ((uint)KERSTART >> 22)] = (int)(pg_tbl[i]) | PTE_P | PTE_W | PTE_U;
   }
-
-  // Use the first entry to jump to base.
-  pg_dir[0] = pg_dir[(uint)KERSTART >> 22];
   
   // Set up page table entry.
   for (i = 0; i < 16 * 1024; i++) {
     pg_tbl[0][i] = (i << 12) | PTE_P | PTE_W | PTE_U;
   }
 
+  pg_dir[0] = pg_dir[(uint)KERSTART >> 22];
 }
 
 main()
