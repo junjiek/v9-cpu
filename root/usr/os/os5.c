@@ -144,22 +144,32 @@ setup_kernel_paging()
 {
   //YOUR CODE: lec7-spoc challenge-part1
   int i;
+
+  // Alignment
   pg_dir = (int *)((((int)&pg_mem) + 4095) & -4096);
+  
+  // Set up page table base
   pg_tbl[0] = pg_dir + 1024;
   for (i = 1; i < 16; ++i) {
     pg_tbl[i] = pg_tbl[i-1] + 1024;
   }
-  for (i = 0; i < 1024; ++i) pg_dir[i] = 0;
-  for (i = 0; i < 16; ++i) {
-    pg_dir[i + 768] = (int)(pg_tbl[i]) | PTE_P | PTE_W | PTE_U;
-  }
-  pg_dir[0] = pg_dir[768];
-  
-  for (i = 0; i < 16 * 1024; i++) pg_tbl[0][i] = (i << 12) | PTE_P | PTE_W | PTE_U;  // trick to write all 4 contiguous pages
-  
 
-  // pg_dir[0] = pg_dir[(uint)KERSTART >> 22]; // need a 1:1 map of low physical memory for awhile
-  // printf("%08x\n", (int)pg_dir[0]);
+  // Set up page directory entry (Offset = 0xC0000000)
+  for (i = 0; i < 1024; ++i) {
+    pg_dir[i] = 0;
+  }
+  for (i = 0; i < 16; ++i) {
+    pg_dir[i + ((uint)KERSTART >> 22)] = (int)(pg_tbl[i]) | PTE_P | PTE_W | PTE_U;
+  }
+
+  // Use the first entry to jump to base.
+  pg_dir[0] = pg_dir[(uint)KERSTART >> 22];
+  
+  // Set up page table entry.
+  for (i = 0; i < 16 * 1024; i++) {
+    pg_tbl[0][i] = (i << 12) | PTE_P | PTE_W | PTE_U;
+  }
+
 }
 
 main()
